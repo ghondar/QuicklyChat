@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>mi chat</title>
+	<script  src="/socket.io/socket.io.js"></script>
+	<script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+	<script>
+		var nombre;
+		var arrayNames={};
+		var websocket = io.connect();
+
+		$(document).on("ready",iniciar);
+		
+		function iniciar(){
+
+			$("#formNombre").on("submit",function(e){
+				e.preventDefault();
+				var bandera=0;
+				var nombreAyuda = $("#name").val();
+				for(var i=0;i<arrayNames.length;i++){
+					if(nombreAyuda==arrayNames[i])
+						bandera=1;
+				}
+				if(bandera==0){
+					$(".overlay,.modal").css("display","none");
+					sendNames();
+				}
+				else{
+					alert("ese nombre ya existe");
+				}
+			})
+
+			$("#formMsg").on("submit",function(e){
+				e.preventDefault();
+				sendMessage();
+			});
+
+			websocket.on('mensaje',procesarUsuario);
+			websocket.on('newMessage',procesarMensaje);
+			//websocket.on('newMessage2',procesarMensaje2);
+			websocket.on('errorName',repetirNombre);
+			websocket.on('notification',aviso_notification);
+		}
+
+		function aviso_notification(nom){
+			$("#notificacion").html("");
+			$("#notificacion").css("display","block");
+			$("#notificacion").append("<p>"+nom+" se ha conectado</p>");
+			$("#notificacion").delay(4000);
+			$("#notificacion").fadeOut();
+
+		}
+
+		function sendNames(){
+			nombre=$("#name").val();
+			websocket.emit('enviarNombre',nombre);
+		}
+
+		function sendMessage(){
+			var msg = $("#msg").val();
+			$("#msg").val("");
+			$('#cuadro_mensaje').append('<div style="width:500px;height:60px;"><div id="" style="border-radius:7px;float:right;position:relative;bottom:0;left:0;width:290px;height:auto;min-height:50px;background-color:#F0F0F0;margin-bottom:5px;padding: 10px;word-break: break-all;font-size:11px;font-family: arial"><b>yo digo: </b>'+msg+'</div></div><br>')
+		    websocket.emit("enviarMensaje",msg);	
+		}
+
+		function procesarUsuario(mensaje){
+			$("#users").html('');
+			for(i in mensaje[1]){
+				$("#users").append("<b>"+mensaje[1][i]+"<b/><br>");
+				arrayNames[i]=mensaje[1][i];
+			}
+			
+		}
+
+		function procesarMensaje(data){
+				$('#cuadro_mensaje').append('<div style="width:500px;height:60px;"><div id="" style="border-radius:7px;position:relative;bottom:0;left:0;width:290px;height:auto;min-height:50px;background-color:#F0F0F0;margin-bottom:5px;padding: 10px;word-break: break-all;font-size:11px;font-family: arial"><b>'+data[0]+' dice: </b>'+data[1]+'</div></div><br>');
+		}
+
+		//function procesarMensaje2(data){
+		//		$('#cuadro_mensaje').append('<div style="width:500px;height:60px;"><div id="" style="border-radius:7px;float:right;position:relative;bottom:0;left:0;width:290px;height:auto;min-height:50px;background-color:#F0F0F0;margin-bottom:5px;padding: 10px;word-break: break-all;font-size:11px;font-family: arial"><b>yo digo: </b>'+data[1]+'</div></div><br>')
+			
+			//$('<p>').text(data[0])+data[1])
+			//$("#chat").animate({scrollTop: $('#chat').height()},800);
+		//}
+	
+
+		function repetirNombre(){
+			alert("el nombre ya esta ocupado");
+			location.reload(true);
+		}
+	</script>
+		<style type="text/css">
+			body{
+				margin: 0;
+				background-color:gray;
+
+			}
+			.overlay{
+				 
+			     position: absolute;
+			     top: 0;
+			     left: 0;
+			     width: 100%;
+			     height: 100%;
+			     background:black;
+			     z-index:1001;
+			     opacity:.75;
+			     -moz-opacity: 0.8;
+			     filter: alpha(opacity=80);
+			}
+			.modal {
+				 
+			     position: absolute;
+			     top: 25%;
+			     left: 37%;
+			     width: 25%;
+			     height: 25%;
+			     padding: 16px;
+			     background: #fff;
+			     color: #333;
+			     z-index:1002;
+			    
+			}
+
+			ul li{ 
+			margin-top:6px;
+			color:#707070 ;
+			}
+			#enciarra_chat{
+			position: absolute;
+			width:832px;
+			height:360px;
+			left: 50%;
+			top: 50%;
+			margin-top: -180px;
+			margin-left: -416px;
+			}
+		</style>
+</head>
+<body>
+	<div id="fade" class="overlay"></div>
+  		<div id="" class="modal">
+		    <form id="formNombre" action="">
+				<center>
+				<h3>Ingresa tu NickName</h3>
+				<input id="name" type="text" style="padding:5px;width:200px" placeholder="example: mandy"><br><br>
+				<input type="submit" value="enviar" style="border:none;padding:8px;width:75px;background-color:#0066FF;color:white"></center>
+			</form>
+  		</div>
+  		<div id="notificacion" style="display:none;width:200px;height:100px;background-color:green;"></div>
+  		<section id="enciarra_chat">
+	<div id="container" style="width:832px;margin:0 auto"><!--para centrar-->
+		<div id="cuadro_mensaje" style="position:relative;overflow-y:auto;padding:8px;width:500px;height:300px;background-color:#D0D0D0;float:left">
+			
+		</div>
+		<div id="encierra_users" style="padding:8px;width:300px;height:300px;background-color:#F0F0F0 ;float:left">
+			<div><center><h3>Usuarios</h3><hr style="background-color:#E0E0E0;color:#E0E0E0;height:1px;border:none"></center></div>
+			<div id="users" style="width:100%;height:100%"></div>
+		</div>
+		<div id="enciarra_input">
+			<form id="formMsg">
+				<textarea id="msg" style="outline:none;width:828px;height:60px;border:none;background-color:#F8F8F8;resize:none;" placeholder="escribe tu mensaje + enter"></textarea>
+				<input type="submit" value="Enviar" style="width:832px;height:50px;border:none">
+			</form>
+		</div>
+	</div>
+	</section>
+ </body>
+</html>

@@ -1,0 +1,9 @@
+{
+	"name": "QuicklyChat",
+	"main": "app.js",
+	"description": "Quickly Chat",
+	"dependencies": {
+		"express": "latest",
+		"socket.io": "latest"
+	}
+}
